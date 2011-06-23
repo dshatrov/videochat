@@ -1,0 +1,26 @@
+AC_INIT([videochat], [0.1])
+
+PKG_CHECK_MODULES(THIS, [libmoment-1.0, mconfig-1.0])
+AC_SUBST(THIS_CFLAGS)
+AC_SUBST(THIS_LIBS)
+
+AM_INIT_AUTOMAKE([1.7 gnu])
+
+AC_PROG_CC
+AC_PROG_CXX
+
+AC_CANONICAL_HOST
+case "$host" in
+  *-*-mingw*|*-*-cygwin*)
+    platform_win32=yes
+    ;;
+  *)
+    platform_win32=no
+    ;;
+esac
+AM_CONDITIONAL(PLATFORM_WIN32, test x$platform_win32 = xyes)
+
+AC_CONFIG_FILES([Makefile
+		 src/Makefile])
+AC_OUTPUT
+
