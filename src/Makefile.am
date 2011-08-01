@@ -8,7 +8,7 @@ COMMON_CFLAGS =				\
 if PLATFORM_WIN32
     COMMON_CFLAGS += -DPLATFORM_WIN32
 else
-    COMMON_CFLAGS += -rdynamic
+    COMMON_CFLAGS += -rdynamic -pthread
 endif
 
 AM_CFLAGS = -std=c99 $(COMMON_CFLAGS)
@@ -27,6 +27,7 @@ videochatd_private_headers =
 videochatd_SOURCES =	\
 	main.cpp
 videochatd_LDADD = $(THIS_LIBS)
+videochatd_LDFLAGS = -Wl,-rpath,'$(libdir)'
 
 EXTRA_DIST = $(videchatd_private_headers)
 
