@@ -24,6 +24,9 @@
 #include <mconfig/mconfig.h>
 
 
+#define MOMENT_VIDEOCHATD__ENABLE_AUDIO
+
+
 using namespace M;
 using namespace Moment;
 
@@ -224,36 +227,39 @@ Result commandMessage (RtmpConnection::MessageInfo * const mt_nonnull msg_info,
     return client_session->rtmp_server.commandMessage (msg_info, page_list, msg_len, amf_encoding);
 }
 
-Result audioMessage (RtmpConnection::MessageInfo * const mt_nonnull msg_info,
-		     PagePool::PageListHead * const mt_nonnull page_list,
-		     Size                     const msg_len,
-		     void                   * const _client_session)
+Result audioMessage (VideoStream::AudioMessageInfo * const mt_nonnull msg_info,
+		     PagePool::PageListHead        * const mt_nonnull page_list,
+		     Size                            const msg_len,
+		     Size                            const msg_offset,
+		     void                          * const _client_session)
 {
     logD (msg, _func, "timestamp: ", msg_info->timestamp);
 
     ClientSession * const client_session = static_cast <ClientSession*> (_client_session);
 
     if (client_session->peer_session) {
-	page_pool.msgRef (page_list->first);
-	client_session->peer_session->rtmp_server.sendAudioMessage (msg_info, page_list, msg_len);
+#ifdef MOMENT_VIDEOCHATD__ENABLE_AUDIO
+	client_session->peer_session->rtmp_server.sendAudioMessage (msg_info, page_list, msg_len, msg_offset);
+#endif
     } else
 	logD (msg, _func, "no peer");
 
     return Result::Success;
 }
 
-Result videoMessage (RtmpConnection::MessageInfo * const mt_nonnull msg_info,
-		     PagePool::PageListHead * const mt_nonnull page_list,
-		     Size                     const msg_len,
-		     void                   * const _client_session)
+Result videoMessage (VideoStream::VideoMessageInfo * const mt_nonnull msg_info,
+		     PagePool::PageListHead        * const mt_nonnull page_list,
+		     Size                            const msg_len,
+		     Size                            const msg_offset,
+		     void                          * const _client_session)
 {
     logD (msg, _func, "timestamp: ", msg_info->timestamp);
 
     ClientSession * const client_session = static_cast <ClientSession*> (_client_session);
 
     if (client_session->peer_session) {
-	page_pool.msgRef (page_list->first);
-	client_session->peer_session->rtmp_server.sendVideoMessage (msg_info, page_list, msg_len);
+	logD (msg, _func, "sending, ts ", msg_info->timestamp, ", ", toString (msg_info->codec_id), ", ", toString (msg_info->frame_type));
+	client_session->peer_session->rtmp_server.sendVideoMessage (msg_info, page_list, msg_len, msg_offset);
     } else
 	logD (msg, _func, "no peer");
 
@@ -332,9 +338,6 @@ RtmpVideoService::Frontend const rtmp_video_service_frontend = {
 Result
 runVideoChat ()
 {
-    config.setOption ("rtmp/bind" , ":8081");
-    config.setOption ("rtmpt/bind", ":8082");
-
     {
 	ConstMemory const config_filename = options.config_filename ?
 						    options.config_filename->mem() :
@@ -363,11 +366,16 @@ runVideoChat ()
 
 	IpAddress addr;
 	{
-	    ConstMemory rtmp_bind = config.getString ("rtmp/bind");
+	    ConstMemory rtmp_bind = config.getString_default ("rtmp/bind", ":1935");
 	    logD_ (_func, "rtmp_bind: ", rtmp_bind);
 	    if (!rtmp_bind.isNull ()) {
-		if (!setIpAddress (rtmp_bind, &addr)) {
-		    logE_ (_func, "setIpAddress() failed (rtmp)");
+		if (!setIpAddress_default (rtmp_bind,
+					   ConstMemory() /* default_host */,
+					   1935          /* default_port */,
+					   true          /* allow_any_host */,
+					   &addr))
+		{
+		    logE_ (_func, "setIpAddress_default() failed (rtmp)");
 		    return Result::Failure;
 		}
 
@@ -392,11 +400,18 @@ runVideoChat ()
 
 	IpAddress addr;
 	{
-	    ConstMemory rtmpt_bind = config.getString ("rtmpt/bind");
+	    ConstMemory rtmpt_bind = config.getString_default ("rtmpt/bind", ":8081");
 	    logD_ (_func, "rtmpt_bind: ", rtmpt_bind);
 	    if (!rtmpt_bind.isNull ()) {
-		if (!setIpAddress (rtmpt_bind, &addr)) {
-		    logE_ (_func, "setIpAddress() failed (rtmpt)");
+		logD_ (_func, "rtmpt_bind is non-null", rtmpt_bind);
+
+		if (!setIpAddress_default (rtmpt_bind,
+					   ConstMemory() /* default_host */,
+					   8081          /* default_port */,
+					   true          /* allow_any_host */,
+					   &addr))
+		{
+		    logE_ (_func, "setIpAddress_default() failed (rtmpt)");
 		    return Result::Failure;
 		}
 
