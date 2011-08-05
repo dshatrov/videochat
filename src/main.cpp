@@ -72,6 +72,7 @@ public:
 
     RtmpConnection *rtmp_conn;
     RtmpServer rtmp_server;
+    VideoStream::FrameSaver frame_saver;
 
     bool queued;
 
@@ -181,13 +182,16 @@ Result startWatching (ConstMemory const &stream_name,
     if (!broadcaster_queue.isEmpty ()) {
 	ClientSession * const peer_session = broadcaster_queue.getFirst ();
 
-	logD_ (_func, "peer session: 0x", fmt_hex, (UintPtr) peer_session);
+	logD_ (_func, "peer session: 0x", fmt_hex, (UintPtr) peer_session, ", ",
+	       "frame_saver 0x", fmt_hex, (UintPtr) &peer_session->frame_saver);
 
 	broadcaster_queue.remove (peer_session);
 	peer_session->queued = false;
 
 	client_session->peer_session = peer_session;
 	peer_session->peer_session = client_session;
+
+	client_session->rtmp_server.sendInitialMessages_unlocked (&peer_session->frame_saver);
 
 	--broadcasters_waiting;
     } else {
@@ -256,6 +260,8 @@ Result videoMessage (VideoStream::VideoMessageInfo * const mt_nonnull msg_info,
     logD (msg, _func, "timestamp: ", msg_info->timestamp);
 
     ClientSession * const client_session = static_cast <ClientSession*> (_client_session);
+
+    client_session->frame_saver.processVideoFrame (msg_info, &page_pool, page_list, msg_len, msg_offset);
 
     if (client_session->peer_session) {
 	logD (msg, _func, "sending, ts ", msg_info->timestamp, ", ", toString (msg_info->codec_id), ", ", toString (msg_info->frame_type));
