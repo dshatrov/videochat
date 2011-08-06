@@ -219,6 +219,7 @@ Result handshakeComplete (void * const _client_session)
 }
 
 Result commandMessage (RtmpConnection::MessageInfo * const mt_nonnull msg_info,
+		       PagePool               * const mt_nonnull page_pool,
 		       PagePool::PageListHead * const mt_nonnull page_list,
 		       Size                     const msg_len,
 		       AmfEncoding              const amf_encoding,
@@ -228,10 +229,11 @@ Result commandMessage (RtmpConnection::MessageInfo * const mt_nonnull msg_info,
 
     ClientSession * const client_session = static_cast <ClientSession*> (_client_session);
 
-    return client_session->rtmp_server.commandMessage (msg_info, page_list, msg_len, amf_encoding);
+    return client_session->rtmp_server.commandMessage (msg_info, page_pool, page_list, msg_len, amf_encoding);
 }
 
 Result audioMessage (VideoStream::AudioMessageInfo * const mt_nonnull msg_info,
+		     PagePool                      * const mt_nonnull page_pool,
 		     PagePool::PageListHead        * const mt_nonnull page_list,
 		     Size                            const msg_len,
 		     Size                            const msg_offset,
@@ -252,6 +254,7 @@ Result audioMessage (VideoStream::AudioMessageInfo * const mt_nonnull msg_info,
 }
 
 Result videoMessage (VideoStream::VideoMessageInfo * const mt_nonnull msg_info,
+		     PagePool                      * const mt_nonnull page_pool,
 		     PagePool::PageListHead        * const mt_nonnull page_list,
 		     Size                            const msg_len,
 		     Size                            const msg_offset,
@@ -261,7 +264,7 @@ Result videoMessage (VideoStream::VideoMessageInfo * const mt_nonnull msg_info,
 
     ClientSession * const client_session = static_cast <ClientSession*> (_client_session);
 
-    client_session->frame_saver.processVideoFrame (msg_info, &page_pool, page_list, msg_len, msg_offset);
+    client_session->frame_saver.processVideoFrame (msg_info, page_pool, page_list, msg_len, msg_offset);
 
     if (client_session->peer_session) {
 	logD (msg, _func, "sending, ts ", msg_info->timestamp, ", ", toString (msg_info->codec_id), ", ", toString (msg_info->frame_type));
