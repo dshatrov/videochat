@@ -130,7 +130,7 @@ dumpStats ()
     logD_ (_func, "broadcasters: ", broadcasters_waiting, ", subscribers: ", subscribers_waiting);
 }
 
-Result startStreaming (ConstMemory const &stream_name,
+Result startStreaming (ConstMemory const & /* stream_name */,
 		       void * const _client_session)
 {
     logD_ (_func_);
@@ -167,7 +167,7 @@ Result startStreaming (ConstMemory const &stream_name,
     return Result::Success;
 }
 
-Result startWatching (ConstMemory const &stream_name,
+Result startWatching (ConstMemory const & /* stream_name */,
 		      void * const _client_session)
 {
     logD_ (_func_);
@@ -207,21 +207,20 @@ Result startWatching (ConstMemory const &stream_name,
 }
 
 RtmpServer::Frontend const rtmp_server_frontend = {
+    NULL /* connect */,
     startStreaming,
     startWatching,
     NULL /* commandMessage */
 };
 
-Result handshakeComplete (void * const _client_session)
+Result handshakeComplete (void * const /* _client_session */)
 {
     logD_ (_func_);
     return Result::Success;
 }
 
-Result commandMessage (RtmpConnection::MessageInfo * const mt_nonnull msg_info,
-		       PagePool               * const mt_nonnull page_pool,
-		       PagePool::PageListHead * const mt_nonnull page_list,
-		       Size                     const msg_len,
+Result commandMessage (VideoStream::Message   * const mt_nonnull msg,
+		       Uint32                   const msg_stream_id,
 		       AmfEncoding              const amf_encoding,
 		       void                   * const _client_session)
 {
@@ -229,23 +228,19 @@ Result commandMessage (RtmpConnection::MessageInfo * const mt_nonnull msg_info,
 
     ClientSession * const client_session = static_cast <ClientSession*> (_client_session);
 
-    return client_session->rtmp_server.commandMessage (msg_info, page_pool, page_list, msg_len, amf_encoding);
+    return client_session->rtmp_server.commandMessage (msg, msg_stream_id, amf_encoding);
 }
 
-Result audioMessage (VideoStream::AudioMessageInfo * const mt_nonnull msg_info,
-		     PagePool                      * const mt_nonnull page_pool,
-		     PagePool::PageListHead        * const mt_nonnull page_list,
-		     Size                            const msg_len,
-		     Size                            const msg_offset,
-		     void                          * const _client_session)
+Result audioMessage (VideoStream::AudioMessage * const mt_nonnull msg,
+		     void                      * const _client_session)
 {
-    logD (msg, _func, "timestamp: ", msg_info->timestamp);
+    logD (msg, _func, "timestamp: ", msg->timestamp);
 
     ClientSession * const client_session = static_cast <ClientSession*> (_client_session);
 
     if (client_session->peer_session) {
 #ifdef MOMENT_VIDEOCHATD__ENABLE_AUDIO
-	client_session->peer_session->rtmp_server.sendAudioMessage (msg_info, page_list, msg_len, msg_offset);
+	client_session->peer_session->rtmp_server.sendAudioMessage (msg);
 #endif
     } else
 	logD (msg, _func, "no peer");
@@ -253,29 +248,25 @@ Result audioMessage (VideoStream::AudioMessageInfo * const mt_nonnull msg_info,
     return Result::Success;
 }
 
-Result videoMessage (VideoStream::VideoMessageInfo * const mt_nonnull msg_info,
-		     PagePool                      * const mt_nonnull page_pool,
-		     PagePool::PageListHead        * const mt_nonnull page_list,
-		     Size                            const msg_len,
-		     Size                            const msg_offset,
-		     void                          * const _client_session)
+Result videoMessage (VideoStream::VideoMessage * const mt_nonnull msg,
+		     void                      * const _client_session)
 {
-    logD (msg, _func, "timestamp: ", msg_info->timestamp);
+    logD (msg, _func, "timestamp: ", msg->timestamp);
 
     ClientSession * const client_session = static_cast <ClientSession*> (_client_session);
 
-    client_session->frame_saver.processVideoFrame (msg_info, page_pool, page_list, msg_len, msg_offset);
+    client_session->frame_saver.processVideoFrame (msg);
 
     if (client_session->peer_session) {
-	logD (msg, _func, "sending, ts ", msg_info->timestamp, ", ", toString (msg_info->codec_id), ", ", toString (msg_info->frame_type));
-	client_session->peer_session->rtmp_server.sendVideoMessage (msg_info, page_list, msg_len, msg_offset);
+	logD (msg, _func, "sending, ts ", msg->timestamp, ", ", toString (msg->codec_id), ", ", toString (msg->frame_type));
+	client_session->peer_session->rtmp_server.sendVideoMessage (msg);
     } else
 	logD (msg, _func, "no peer");
 
     return Result::Success;
 }
 
-void closed (Exception * const exc,
+void closed (Exception * const /* exc_ */,
 	     void      * const _client_session)
 {
     logD_ (_func, "client_session 0x", fmt_hex, (UintPtr) _client_session);
