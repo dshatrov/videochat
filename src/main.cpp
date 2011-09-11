@@ -357,8 +357,7 @@ runVideoChat ()
     {
 	rtmp_service.setFrontend (Cb<RtmpVideoService::Frontend> (&rtmp_video_service_frontend, NULL, NULL));
 
-	rtmp_service.setTimers (server_app.getTimers());
-	rtmp_service.setPollGroup (server_app.getPollGroup());
+	rtmp_service.setServerContext (server_app.getServerContext());
 	rtmp_service.setPagePool (&page_pool);
 
 	if (!rtmp_service.init ())
@@ -392,7 +391,7 @@ runVideoChat ()
 	rtmpt_service.setFrontend (Cb<RtmpVideoService::Frontend> (&rtmp_video_service_frontend, NULL, NULL));
 
 	rtmpt_service.setTimers (server_app.getTimers());
-	rtmpt_service.setPollGroup (server_app.getPollGroup());
+	rtmpt_service.setPollGroup (server_app.getMainPollGroup());
 	rtmpt_service.setPagePool (&page_pool);
 
 	if (!rtmpt_service.init ())
