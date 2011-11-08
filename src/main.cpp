@@ -394,7 +394,7 @@ runVideoChat ()
 	rtmpt_service.setPollGroup (server_app.getMainPollGroup());
 	rtmpt_service.setPagePool (&page_pool);
 
-	if (!rtmpt_service.init ())
+	if (!rtmpt_service.init (30 /* session_keepalive_timeout */, false /* no_keepalive_conns */))
 	    return Result::Failure;
 
 	IpAddress addr;
