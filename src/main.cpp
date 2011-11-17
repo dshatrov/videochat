@@ -305,8 +305,9 @@ RtmpConnection::Frontend const rtmp_frontend = {
     closed
 };
 
-Result clientConnected (RtmpConnection * mt_nonnull const rtmp_conn,
-			void * const /* cb_data */)
+Result clientConnected (RtmpConnection  * mt_nonnull const rtmp_conn,
+			IpAddress const & /* client_addr */,
+			void            * const /* cb_data */)
 {
     logD_ (_func_);
 
