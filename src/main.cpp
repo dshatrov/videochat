@@ -130,8 +130,9 @@ dumpStats ()
     logD_ (_func, "broadcasters: ", broadcasters_waiting, ", subscribers: ", subscribers_waiting);
 }
 
-Result startStreaming (ConstMemory const & /* stream_name */,
-		       void * const _client_session)
+Result startStreaming (ConstMemory     const & /* stream_name */,
+		       RecordingMode   const /* rec_mode */,
+		       void          * const _client_session)
 {
     logD_ (_func_);
     dumpStats ();
