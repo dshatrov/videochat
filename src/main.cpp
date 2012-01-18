@@ -211,7 +211,9 @@ RtmpServer::Frontend const rtmp_server_frontend = {
     NULL /* connect */,
     startStreaming,
     startWatching,
-    NULL /* commandMessage */
+    NULL /* commandMessage */,
+    NULL /* pause */,
+    NULL /* resume */
 };
 
 Result handshakeComplete (void * const /* _client_session */)
