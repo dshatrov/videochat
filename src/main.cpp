@@ -351,7 +351,9 @@ runVideoChat ()
 	    return Result::Failure;
 	}
     }
+    logLock ();
     config.dump (logs);
+    logUnlock ();
 
     if (!server_app.init ()) {
 	logE_ (_func, "ServerApp::init() failed: ", exc->toString());
