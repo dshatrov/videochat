@@ -396,12 +396,14 @@ runVideoChat ()
     {
 	rtmpt_service.setFrontend (Cb<RtmpVideoService::Frontend> (&rtmp_video_service_frontend, NULL, NULL));
 
-	rtmpt_service.setTimers (server_app.getTimers());
-	rtmpt_service.setPollGroup (server_app.getMainPollGroup());
-	rtmpt_service.setPagePool (&page_pool);
-
-	if (!rtmpt_service.init (30 /* session_keepalive_timeout */, false /* no_keepalive_conns */))
+	if (!rtmpt_service.init (server_app.getServerContext()->getTimers(),
+                                 &page_pool,
+                                 server_app.getServerContext()->getMainPollGroup(),
+                                 30    /* session_keepalive_timeout */,
+                                 false /* no_keepalive_conns */))
+        {
 	    return Result::Failure;
+        }
 
 	IpAddress addr;
 	{
