@@ -262,7 +262,7 @@ Result videoMessage (VideoStream::VideoMessage * const mt_nonnull msg,
 
     if (client_session->peer_session) {
 	logD (msg, _func, "sending, ts ", msg->timestamp, ", ", toString (msg->codec_id), ", ", toString (msg->frame_type));
-	client_session->peer_session->rtmp_server.sendVideoMessage (msg);
+	client_session->peer_session->rtmp_conn.sendVideoMessage (msg);
     } else
 	logD (msg, _func, "no peer");
 
